@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>背书App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 15px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    textarea {
+      width: 100%;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .card {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>📥 导入内容</h2>
+<textarea id="importBox" rows="6" placeholder="一行问题，一行答案"></textarea>
+<button onclick="importText()">导入</button>
+
+<div class="card">
+  <h3>📖 问题</h3>
+  <div id="question">请先导入内容</div>
+
+  <h3>✍️ 你的回答</h3>
+  <textarea id="input" rows="3"></textarea>
+
+  <button onclick="check()">提交并检查</button>
+  <button onclick="showAnswer()">显示答案</button>
+  <button onclick="nextCard()">下一题</button>
+
+  <h3>✅ 正确答案</h3>
+  <div id="answer"></div>
+
+  <h3>🤖 AI反馈</h3>
+  <div id="result"></div>
+</div>
+
+<script>
+let cards = [];
+let current = 0;
+
+function importText() {
+  const text = document.getElementById("importBox").value;
+  const lines = text.split("\n").filter(l => l.trim() !== "");
+
+  cards = [];
+  for (let i = 0; i < lines.length; i += 2) {
+    cards.push({ front: lines[i], back: lines[i + 1] || "" });
+  }
+
+  current = 0;
+  showCard();
+}
+
+function showCard() {
+  document.getElementById("question").innerText = cards[current]?.front || "";
+  document.getElementById("answer").innerText = "";
+  document.getElementById("result").innerText = "";
+  document.getElementById("input").value = "";
+}
+
+function nextCard() {
+  current = (current + 1) % cards.length;
+  showCard();
+}
+
+function showAnswer() {
+  document.getElementById("answer").innerText = cards[current].back;
+}
+
+async function check() {
+  const res = await fetch("/check", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      question: cards[current].front,
+      correct: cards[current].back,
+      user_input: document.getElementById("input").value
+    })
+  });
+
+  const data = await res.json();
+  document.getElementById("result").innerText =
+    data.choices[0].message.content;
+}
+</script>
+
+</body>
+</html>
